@@ -175,7 +175,7 @@ function ballBoundaries() {
 function animate() { 
  /*  console.log("ball X", ballX);
   console.log("ball Y", ballY); */
-  //MOVE THE BALL IS THE REFEREE / PLAYER-2 IS PRESENT
+  //MOVE THE BALL If THE REFEREE / PLAYER-2 IS PRESENT
   if (isReferee) { 
     ballMove();
     ballBoundaries();
@@ -220,7 +220,7 @@ socket.on('connect', () => {
 })
 
 socket.on('PlayerReady', (playerData) => {
-  console.log(`player ${playerData.readyPlayersCount} ready. ID=${playerData._id}`);
+  console.log(`player ${playerData.readyPlayersCount} ready. ID= ${playerData._id}`);
 })
 
 socket.on('StartGame', (refereeId) => {
@@ -243,5 +243,4 @@ socket.on("BallMoveClient", (ballData) => {
 
 socket.on('disconnect', (reason, details) => {
   console.log(reason);
-  console.log(details); 
 })
