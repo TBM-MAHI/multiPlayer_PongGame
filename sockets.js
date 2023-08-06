@@ -2,6 +2,7 @@ let readyPlayersCount = 0;
 function listen(io) {
     let pongNameSpace = io.of('/pong');
     let room;
+    let clientIDMapping = {};
     //this event is listening for a successful client connection
     //the socket arg passed in the callback is from the CLIENT
     pongNameSpace.on('connection', (socket) => {
@@ -13,6 +14,8 @@ function listen(io) {
             readyPlayersCount++;
             console.log(`player ${readyPlayersCount} ready in Room ${room}. id=`, socket.id);
             //to the sender itself- the client who emitted the event
+            if (!clientIDMapping[ socket.id ])
+                clientIDMapping[ socket.id ] = readyPlayersCount;
             socket.emit("PlayerReady", { readyPlayersCount, _id: socket.id });
 
             if (readyPlayersCount % 2 === 0) {
@@ -20,7 +23,13 @@ function listen(io) {
                 pongNameSpace.in(room).emit("StartGame", socket.id);
             }
         })
-
+        console.log(clientIDMapping);
+        socket.on('playerLabel', (socketID) => {
+            console.log("playerLabel");
+            console.log(clientIDMapping[ socketID ]);
+            socket.emit("playerLabel", clientIDMapping[ socketID ] )
+        });
+      
         socket.on('PaddleMove', (paddlePositionData) => {
             //broadcast a message to all clients- except the sender
             // console.log(paddlePositionData);
@@ -29,7 +38,7 @@ function listen(io) {
 
         socket.on("BallMove", (ballData) => {
             //broadcast the ball position,score to the non- referee player
-           // console.log(ballData);
+            // console.log(ballData);
             socket.to(room).emit("BallMoveClient", ballData);
         })
 

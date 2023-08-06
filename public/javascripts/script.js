@@ -10,6 +10,7 @@ const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
 let isReferee = false;
 let paddleIndex = 0;
+let playerNO = null;
 
 let width = 500;
 let height = 700;
@@ -60,7 +61,7 @@ function renderIntro() {
 
 // Render Everything on Canvas
 function renderCanvas() {
-  // Canvas Background
+ // Canvas Background
   context.fillStyle = 'black';
   context.fillRect(0, 0, width, height);
 
@@ -88,10 +89,21 @@ function renderCanvas() {
   context.fill();
 
   // Score
-  context.font = "32px Courier New";
-  context.fillText(score[ 0 ], 20, (canvas.height / 2) + 50);
-  context.fillText(score[ 1 ], 20, (canvas.height / 2) - 30);
-}
+  context.font = "20px Courier New";
+  context.fillText(score[ 1 ], 10, (canvas.height / 2) - 30);
+  context.fillText(score[ 0 ], 10, (canvas.height / 2) + 50);
+  context.font = "15px serif";
+  if (playerNO % 2 !== 0) {
+     console.log("playerLabel", playerNO);
+      context.fillText("(You)", 37, (canvas.height / 2) - 30); //top
+      context.fillText("(Opponent)", 37, (canvas.height / 2) + 50);//bottom
+    }
+    else {
+      //console.log("playerLabel", playerNO);
+      context.fillText("(You)", 37, (canvas.height / 2) + 50);//bottom
+      context.fillText("(Opponent)", 37, (canvas.height / 2) - 30);//top
+    }
+ }
 
 // Reset Ball to Center
 function ballReset() {
@@ -108,7 +120,7 @@ function ballReset() {
 // Adjust Ball Movement
 function ballMove() {
   // Vertical Speed
-  ballY += speedY * ballDirection;
+  ballY += -speedY * ballDirection;
   // Horizontal Speed
   if (playerMoved) {
     ballX += speedX;
@@ -135,10 +147,10 @@ function ballBoundaries() {
     if (ballX >= paddleX[ 0 ] && ballX <= paddleX[ 0 ] + paddleWidth) {
       // Add Speed on Hit
       if (playerMoved) {
-        speedY += 1;
+        speedY += 3;
         // Max Speed
-        if (speedY > 5) {
-          speedY = 5;
+        if (speedY < -5) {
+          speedY = -5;
         }
       }
       ballDirection = -ballDirection;
@@ -172,14 +184,14 @@ function ballBoundaries() {
 }
 
 // Called Every Frame
-function animate() { 
- /*  console.log("ball X", ballX);
-  console.log("ball Y", ballY); */
+function animate() {
+  /*  console.log("ball X", ballX);
+   console.log("ball Y", ballY); */
   //MOVE THE BALL If THE REFEREE / PLAYER-2 IS PRESENT
-  if (isReferee) { 
+  if (isReferee) {
     ballMove();
     ballBoundaries();
- }
+  }
   renderCanvas();
   window.requestAnimationFrame(animate);
 }
@@ -189,11 +201,14 @@ function loadGame() {
   createCanvas();
   renderIntro();
   socket.emit('ready');
+  setTimeout(() => { socket.emit("playerLabel", socket.id) }, 300);
+  
 }
 
 function startGame() {
   paddleIndex = isReferee ? 0 : 1;
   window.requestAnimationFrame(animate);
+ 
   canvas.addEventListener('mousemove', (e) => {
     playerMoved = true;
     paddleX[ paddleIndex ] = e.offsetX;
@@ -225,7 +240,7 @@ socket.on('PlayerReady', (playerData) => {
 
 socket.on('StartGame', (refereeId) => {
   isReferee = socket.id === refereeId;
-  console.log('Referee is', isReferee,"Referee ID", refereeId);
+  console.log('Referee is', isReferee, "Referee ID", refereeId);
   startGame();
 })
 
@@ -235,12 +250,14 @@ socket.on("paddleMoveDataClient", (paddlePositionData) => {
 });
 
 socket.on("BallMoveClient", (ballData) => {
-  console.log("ball move listening");
+  // console.log("ball move listening");
   ballX = ballData.ballX;
   ballY = ballData.ballY;
   score = ballData.score;
 });
-
+socket.on("playerLabel", (playerNumber) => { 
+  playerNO = playerNumber;
+})
 socket.on('disconnect', (reason, details) => {
   console.log(reason);
 })
