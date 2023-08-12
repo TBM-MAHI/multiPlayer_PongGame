@@ -1,16 +1,19 @@
 //socket
 /*  by default socket io connects to the same server/hostname
-as the front and backend are on the same host/server
-the connection will be on the same port
+    as the front and backend are on the same host/server
+    the connection will be on the same port
  */
 //const socket = io('http://localhost:3500');
 const socket = io('/pong');
 // Canvas Related 
 const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
+const gameOverEl = document.createElement('div');
+//Player
 let isReferee = false;
 let paddleIndex = 0;
 let playerNO = null;
+let playerStatus = [ 0, 0 ];
 
 let width = 500;
 let height = 700;
@@ -37,6 +40,9 @@ let speedX = 0;
 
 // Score for Both Players
 let score = [ 0, 0 ];
+let winningScore = 10;
+let isGameOver = true;
+let isNewGame = true;
 
 // Create Canvas Element
 function createCanvas() {
@@ -61,7 +67,7 @@ function renderIntro() {
 
 // Render Everything on Canvas
 function renderCanvas() {
- // Canvas Background
+  // Canvas Background
   context.fillStyle = 'black';
   context.fillRect(0, 0, width, height);
 
@@ -90,20 +96,20 @@ function renderCanvas() {
 
   // Score
   context.font = "20px Courier New";
-  context.fillText(score[ 1 ], 10, (canvas.height / 2) - 30);
-  context.fillText(score[ 0 ], 10, (canvas.height / 2) + 50);
+  context.fillText(score[ 1 ], 10, (canvas.height / 2) - 30);//top player
+  context.fillText(score[ 0 ], 10, (canvas.height / 2) + 50); // bottom player
   context.font = "15px serif";
   if (playerNO % 2 !== 0) {
-     console.log("playerLabel", playerNO);
-      context.fillText("(You)", 37, (canvas.height / 2) - 30); //top
-      context.fillText("(Opponent)", 37, (canvas.height / 2) + 50);//bottom
-    }
-    else {
-      //console.log("playerLabel", playerNO);
-      context.fillText("(You)", 37, (canvas.height / 2) + 50);//bottom
-      context.fillText("(Opponent)", 37, (canvas.height / 2) - 30);//top
-    }
- }
+    // console.log("playerLabel", playerNO);
+    context.fillText("(You)", 37, (canvas.height / 2) - 30); //top
+    context.fillText("(Opponent)", 37, (canvas.height / 2) + 50);//bottom
+  }
+  else {
+    //console.log("playerLabel", playerNO);
+    context.fillText("(You)", 37, (canvas.height / 2) + 50);//bottom
+    context.fillText("(Opponent)", 37, (canvas.height / 2) - 30);//top
+  }
+}
 
 // Reset Ball to Center
 function ballReset() {
@@ -144,10 +150,10 @@ function ballBoundaries() {
   }
   // Bounce off player paddle (bottom)
   if (ballY > height - paddleDiff) {
-    if (ballX >= paddleX[ 0 ] && ballX <= paddleX[ 0 ] + paddleWidth) {
+    if (ballX > paddleX[ 0 ] && ballX < paddleX[ 0 ] + paddleWidth) {
       // Add Speed on Hit
       if (playerMoved) {
-        speedY += 3;
+        speedY -= 3;
         // Max Speed
         if (speedY < -5) {
           speedY = -5;
@@ -164,7 +170,7 @@ function ballBoundaries() {
   }
   // Bounce off computer paddle (top)
   if (ballY < paddleDiff) {
-    if (ballX >= paddleX[ 1 ] && ballX <= paddleX[ 1 ] + paddleWidth) {
+    if (ballX > paddleX[ 1 ] && ballX < paddleX[ 1 ] + paddleWidth) {
       // Add Speed on Hit
       if (playerMoved) {
         speedY += 1;
@@ -185,6 +191,9 @@ function ballBoundaries() {
 
 // Called Every Frame
 function animate() {
+  //console.log(playerNO, "isGameOver",isGameOver);
+  if (!isGameOver)
+    window.requestAnimationFrame(animate);
   /*  console.log("ball X", ballX);
    console.log("ball Y", ballY); */
   //MOVE THE BALL If THE REFEREE / PLAYER-2 IS PRESENT
@@ -193,22 +202,87 @@ function animate() {
     ballBoundaries();
   }
   renderCanvas();
-  window.requestAnimationFrame(animate);
+  checkGameOver();
 }
 
-// Load Game, Reset Everything
-function loadGame() {
-  createCanvas();
-  renderIntro();
-  socket.emit('ready');
-  setTimeout(() => { socket.emit("playerLabel", socket.id) }, 300);
-  
+
+function showGameOverEl(winner) {
+
+  console.log("Winner", winner);
+  console.log("Status from gameOver-", playerStatus);
+  console.log("score from gameOver-", score);
+  let playerNoType = (playerNO % 2 === 0) ? "even" : "odd";
+  // Hide Canvas
+  canvas.hidden = true;
+  // Container
+  gameOverEl.textContent = '';
+  gameOverEl.classList.add('game-over-container');
+  // Title
+  const title = document.createElement('h1');
+  //check if THIS client/player WON
+  if (playerNoType === winner)
+    title.textContent = `You Won!😎`;
+  else
+    title.textContent = `You Lost 😔`;
+  // Button
+  const playAgainBtn = document.createElement('button');
+  playAgainBtn.setAttribute('onclick', 'setPlayerStatus()');
+  playAgainBtn.textContent = 'Play Again';
+  // Append
+  gameOverEl.append(title);
+  gameOverEl.append(playAgainBtn);
+  //append game over Div to the body
+  document.body.append(gameOverEl);
+}
+
+// Check If One Player Has Winning Score, If They Do, End Game
+function checkGameOver() {
+  // console.log(score);
+  if (score[ 0 ] === winningScore || score[ 1 ] === winningScore) {
+    isGameOver = true;
+    // Set Winner
+    let winner = score[ 0 ] === winningScore ? "even" : "odd";
+    //deactivate players
+    playerStatus.fill(0);
+   showGameOverEl(winner);
+  }
+}
+
+function setPlayerStatus() {
+  if (isGameOver && !isNewGame) {
+    document.body.removeChild(gameOverEl);
+    canvas.hidden = false;
+  }
+  console.log("play again clicked by player", playerNO);
+  (playerNO % 2 === 0) ? playerStatus[ 0 ] = 1 : playerStatus[ 1 ] = 1;
+
+  socket.emit("playerStatus", { playerStatus }, (response) => {
+    if (response.status === 'ok') {
+      if (playerStatus.every((val) => val === 1))
+        socket.emit("startGame", { clientID: socket.id });
+      else {
+        console.log("rendering intro");
+        renderIntro();
+      }
+    }
+  });
+  console.log(playerStatus);
 }
 
 function startGame() {
+  /* SET Player & opponent indices
+   1 - Client 1 / player 1/  TOP player,
+   0 - Client 2 / player 2  referee/ Bottom Player, 
+   */
+    //reset Scores
+  score = [ 0, 0 ];
   paddleIndex = isReferee ? 0 : 1;
-  window.requestAnimationFrame(animate);
- 
+  isGameOver = false;
+  isNewGame = false;
+  //set the playerStatus Data to 1-active in gameStart
+  playerStatus.fill(1);
+  animate();
+
   canvas.addEventListener('mousemove', (e) => {
     playerMoved = true;
     paddleX[ paddleIndex ] = e.offsetX;
@@ -224,7 +298,16 @@ function startGame() {
     })
     // Hide Cursor
     canvas.style.cursor = 'none';
+    //  console.log(paddleX);
   });
+  console.log("player", playerNO, "activity from gameStart-", playerStatus);
+}
+
+// Load Game, Reset Everything
+function loadGame() {
+  createCanvas();
+  renderIntro();
+  socket.emit('ready');
 }
 
 // On Load
@@ -236,17 +319,22 @@ socket.on('connect', () => {
 
 socket.on('PlayerReady', (playerData) => {
   console.log(`player ${playerData.readyPlayersCount} ready. ID= ${playerData._id}`);
+  playerNO = playerData.readyPlayersCount;
 })
 
 socket.on('StartGame', (refereeId) => {
   isReferee = socket.id === refereeId;
-  console.log('Referee is', isReferee, "Referee ID", refereeId);
+  console.log('This player isReferee', isReferee, "Referee ID", refereeId);
   startGame();
 })
 
 socket.on("paddleMoveDataClient", (paddlePositionData) => {
   let opponentPaddle_Index = paddlePositionData.paddleIndex;
   paddleX[ opponentPaddle_Index ] = paddlePositionData.paddlePositionX;
+});
+socket.on("playerStatusDataClient", (playerStatusData, callback) => {
+  playerStatus = playerStatusData.playerStatus;
+  callback({ response: "ok" });
 });
 
 socket.on("BallMoveClient", (ballData) => {
@@ -255,9 +343,7 @@ socket.on("BallMoveClient", (ballData) => {
   ballY = ballData.ballY;
   score = ballData.score;
 });
-socket.on("playerLabel", (playerNumber) => { 
-  playerNO = playerNumber;
-})
-socket.on('disconnect', (reason, details) => {
+
+socket.on('disconnect', (reason) => {
   console.log(reason);
 })
