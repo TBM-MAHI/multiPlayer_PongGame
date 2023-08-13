@@ -1,11 +1,11 @@
-Multilayer Pong Game
+MultiPlayer Pong Game
 ==============================
 ## Features
 - ##### This is a Backend oriented project implemented with Node and Socket.IO library.
 - ##### **Socket.IO** is a library that enables low-latency, bidirectional and event-based communication between a client and a server.
 - ##### The frontend is render using the `Canvas WEB API` and animation is done using the `requestAnimationFrame` WEB API.
-- #####  This game supports 2 player/clients in a room (an advance feature of Socket.IO). So, multiple pairs of clients can play in different rooms simultaneously.
-- ##### Player label (You and opponent ) will be displayed accordingly on both sides(players).
+- #####  This game supports 2 player/clients in a room (an advance feature of *Socket.IO*). So, multiple pairs of clients can play in different rooms simultaneously.
+- ##### Player labels (You and opponent ) are displayed accordingly on both sides(players).
 - ##### After Game over if 1 player press `play again button` that player will be shown the `waiting...` screen.The game will not start until other player has also pressed the `play again button`.
 
 
