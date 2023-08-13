@@ -1,6 +1,6 @@
 //socket
 /*  by default socket io connects to the same server/hostname
-    as the front and backend are on the same host/server
+    as the front and backend are on the same host/server/port
     the connection will be on the same port
  */
 //const socket = io('http://localhost:3500');
@@ -40,7 +40,7 @@ let speedX = 0;
 
 // Score for Both Players
 let score = [ 0, 0 ];
-let winningScore = 10;
+let winningScore = 5;
 let isGameOver = true;
 let isNewGame = true;
 
@@ -58,8 +58,7 @@ function renderIntro() {
   // Canvas Background
   context.fillStyle = 'black';
   context.fillRect(0, 0, width, height);
-
-  // Intro Text
+   // Intro Text
   context.fillStyle = 'white';
   context.font = "32px Courier New";
   context.fillText("Waiting for opponent...", 20, (canvas.height / 2) - 30);
@@ -115,7 +114,7 @@ function renderCanvas() {
 function ballReset() {
   ballX = width / 2;
   ballY = height / 2;
-  speedY = 3;
+  speedY = 1.5;
   socket.emit('BallMove', {
     ballX,
     ballY,
@@ -126,7 +125,7 @@ function ballReset() {
 // Adjust Ball Movement
 function ballMove() {
   // Vertical Speed
-  ballY += -speedY * ballDirection;
+  ballY += speedY * ballDirection;
   // Horizontal Speed
   if (playerMoved) {
     ballX += speedX;
@@ -148,16 +147,16 @@ function ballBoundaries() {
   if (ballX > width && speedX > 0) {
     speedX = -speedX;
   }
-  // Bounce off player paddle (bottom)
+  // Bounce off Bottom player paddle 
   if (ballY > height - paddleDiff) {
-    if (ballX > paddleX[ 0 ] && ballX < paddleX[ 0 ] + paddleWidth) {
+    if (ballX >= paddleX[ 0 ] && ballX <= paddleX[ 0 ] + paddleWidth) {
       // Add Speed on Hit
       if (playerMoved) {
-        speedY -= 3;
+        speedY += 1;
         // Max Speed
-        if (speedY < -5) {
-          speedY = -5;
-        }
+        if (speedY > 5) {
+          speedY = 5;
+         }
       }
       ballDirection = -ballDirection;
       trajectoryX[ 0 ] = ballX - (paddleX[ 0 ] + paddleDiff);
@@ -168,9 +167,9 @@ function ballBoundaries() {
       score[ 1 ]++;
     }
   }
-  // Bounce off computer paddle (top)
+  // Bounce off Top player paddle 
   if (ballY < paddleDiff) {
-    if (ballX > paddleX[ 1 ] && ballX < paddleX[ 1 ] + paddleWidth) {
+    if (ballX >= paddleX[ 1 ] && ballX <= paddleX[ 1 ] + paddleWidth) {
       // Add Speed on Hit
       if (playerMoved) {
         speedY += 1;
@@ -196,7 +195,7 @@ function animate() {
     window.requestAnimationFrame(animate);
   /*  console.log("ball X", ballX);
    console.log("ball Y", ballY); */
-  //MOVE THE BALL If THE REFEREE / PLAYER-2 IS PRESENT
+  //MOVE THE BALL If THE REFEREE / 2nd PLAYER IS PRESENT
   if (isReferee) {
     ballMove();
     ballBoundaries();
@@ -207,7 +206,6 @@ function animate() {
 
 
 function showGameOverEl(winner) {
-
   console.log("Winner", winner);
   console.log("Status from gameOver-", playerStatus);
   console.log("score from gameOver-", score);

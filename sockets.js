@@ -2,9 +2,8 @@ let readyPlayersCount = 0;
 function listen(io) {
     let pongNameSpace = io.of('/pong');
     let room;
-
-    //this event is listening for a successful client connection
-    //the socket arg passed in the callback is from the CLIENT
+   /*  this event is listening for a successful client connection
+    the socket arg passed in the callback is from the CLIENT */
     pongNameSpace.on('connection', (socket) => {
         console.log("connected at /pong");
         const totalClients = pongNameSpace.sockets.size;
@@ -32,11 +31,11 @@ function listen(io) {
             // console.log(paddlePositionData);
             socket.to(room).emit("paddleMoveDataClient", paddlePositionData);
         })
-        
+
         socket.on('playerStatus', (data, callback) => {
             //  console.log(data);
             socket.timeout(3000).to(room).emit("playerStatusDataClient", data, (err, acknowledgement) => {
-                console.log(`acknowledgement from playerStatusDataClient`, { acknowledgement });
+              //  console.log(`acknowledgement from playerStatusDataClient`, { acknowledgement });
                 if (err)
                     console.log(err);
                 if (acknowledgement && acknowledgement[ 0 ].response === "ok") {
