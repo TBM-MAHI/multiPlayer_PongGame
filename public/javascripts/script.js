@@ -40,7 +40,7 @@ let speedX = 0;
 
 // Score for Both Players
 let score = [ 0, 0 ];
-let winningScore = 5;
+let winningScore = 7;
 let isGameOver = true;
 let isNewGame = true;
 
